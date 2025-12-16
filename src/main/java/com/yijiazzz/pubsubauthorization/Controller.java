@@ -175,10 +175,16 @@ public class Controller {
     String userName = event.path("user").path("name").asText();
     logger.info("Triggering auth flow for space: " + spaceName);
 
-    if (redirectUri == null || redirectUri.isEmpty()) {
+    if (clientId == null
+        || clientId.isEmpty()
+        || clientSecret == null
+        || clientSecret.isEmpty()
+        || redirectUri == null
+        || redirectUri.isEmpty()) {
       sendMessage(
           spaceName,
-          "Configuration Error: redirectUri is not set. Please configure google.redirect.uri.");
+          "Configuration Error: Google OAuth parameters are not fully set. Please configure"
+              + " google.client.id, google.client.secret, and google.redirect.uri.");
       return;
     }
 
