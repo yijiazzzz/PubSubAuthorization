@@ -159,6 +159,12 @@ public class Controller {
   }
 
   private String generateAuthUrl(String userName) {
+    if (clientId != null) {
+      logger.info("Generating Auth URL with Client ID length: " + clientId.length());
+      if (clientId.length() > 5) {
+        logger.info("Client ID starts with: " + clientId.substring(0, 5) + "...");
+      }
+    }
     return new GoogleAuthorizationCodeRequestUrl(clientId, redirectUri, SCOPES)
         .setState(userName)
         .setAccessType("offline")
