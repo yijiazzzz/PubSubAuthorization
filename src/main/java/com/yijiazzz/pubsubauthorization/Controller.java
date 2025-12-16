@@ -46,13 +46,13 @@ public class Controller {
 
   private final ChatServiceClient chatServiceClient;
 
-  @Value("${google.client.id}")
+  @Value("${google.client.id:}")
   private String clientId;
 
-  @Value("${google.client.secret}")
+  @Value("${google.client.secret:}")
   private String clientSecret;
 
-  @Value("${google.redirect.uri}")
+  @Value("${google.redirect.uri:}")
   private String redirectUri;
 
   @Value("${google.token.uri:https://oauth2.googleapis.com/token}")

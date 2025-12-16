@@ -1,5 +1,6 @@
 package com.yijiazzz.pubsubauthorization;
 
+import java.util.Collections;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -25,7 +26,8 @@ public class PubSubApplication {
     if (port == null) {
       port = "8080";
     }
-    System.setProperty("server.port", port);
-    SpringApplication.run(PubSubApplication.class, args);
+    SpringApplication app = new SpringApplication(PubSubApplication.class);
+    app.setDefaultProperties(Collections.singletonMap("server.port", port));
+    app.run(args);
   }
 }
