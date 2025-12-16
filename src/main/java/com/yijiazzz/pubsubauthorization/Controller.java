@@ -175,6 +175,13 @@ public class Controller {
     String userName = event.path("user").path("name").asText();
     logger.info("Triggering auth flow for space: " + spaceName);
 
+    if (redirectUri == null || redirectUri.isEmpty()) {
+      sendMessage(
+          spaceName,
+          "Configuration Error: redirectUri is not set. Please configure google.redirect.uri.");
+      return;
+    }
+
     String authUrl = generateAuthUrl(userName);
     sendMessage(spaceName, "Please authorize access to use this command: " + authUrl);
   }
