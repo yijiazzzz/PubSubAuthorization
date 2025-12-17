@@ -44,6 +44,8 @@ public class Controller {
           // Add other required scopes here
           );
 
+  private static final String OOB_REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
+
   private final ChatServiceClient chatServiceClient;
 
   @Value("${google.client.id:}")
@@ -127,12 +129,49 @@ public class Controller {
       if ("SLASH_COMMAND".equals(type)
           || ("MESSAGE".equals(type) && event.path("message").has("slashCommand"))) {
         handleSlashCommand(event);
+      } else if ("MESSAGE".equals(type)) {
+        handleMessage(event);
       } else {
         logger.info("Received event type: " + type);
       }
     } catch (Exception e) {
       logger.error("Error processing message: " + e.getMessage(), e);
       e.printStackTrace();
+    }
+  }
+
+  private void handleMessage(JsonNode event) {
+    String text = event.path("message").path("text").asText();
+    if (text != null && text.trim().startsWith("4/")) {
+      processAuthCode(event, text.trim());
+    } else {
+      logger.info("Ignored message: " + text);
+    }
+  }
+
+  private void processAuthCode(JsonNode event, String code) {
+    String spaceName = event.path("space").path("name").asText();
+    try {
+      GoogleTokenResponse tokenResponse =
+          new GoogleAuthorizationCodeTokenRequest(
+                  httpTransport,
+                  jsonFactory,
+                  tokenUri,
+                  clientId,
+                  clientSecret,
+                  code,
+                  OOB_REDIRECT_URI)
+              .execute();
+
+      String accessToken = tokenResponse.getAccessToken();
+      String refreshToken = tokenResponse.getRefreshToken();
+
+      logger.info("Access token received via manual flow: " + accessToken);
+      // Store tokens in DB associated with the user
+      sendMessage(spaceName, "Authorization successful! You can now use the slash command.");
+    } catch (IOException e) {
+      logger.error("Failed to exchange code for token", e);
+      sendMessage(spaceName, "Authorization failed: " + e.getMessage());
     }
   }
 
@@ -158,7 +197,7 @@ public class Controller {
     }
   }
 
-  private String generateAuthUrl(String userName) {
+  private String generateAuthUrl(String userName, String redirectUri) {
     if (clientId != null) {
       logger.info("Generating Auth URL with Client ID length: " + clientId.length());
       if (clientId.length() > 5) {
@@ -194,8 +233,11 @@ public class Controller {
       return;
     }
 
-    String authUrl = generateAuthUrl(userName);
-    sendMessage(spaceName, "Please authorize access to use this command: " + authUrl);
+    String authUrl = generateAuthUrl(userName, OOB_REDIRECT_URI);
+    sendMessage(
+        spaceName,
+        "Please authorize access to use this command (copy the code and paste it here): "
+            + authUrl);
   }
 
   private void createMessage(JsonNode event) {
