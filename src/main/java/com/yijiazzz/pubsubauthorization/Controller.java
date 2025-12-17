@@ -205,6 +205,7 @@ public class Controller {
     try {
       Message message =
           Message.newBuilder()
+              .setText("Please configure your account.")
               .setActionResponse(
                   ActionResponse.newBuilder()
                       .setType(ActionResponse.ResponseType.REQUEST_CONFIG)
