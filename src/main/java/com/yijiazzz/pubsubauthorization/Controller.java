@@ -14,6 +14,7 @@ import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.chat.v1.ChatServiceClient;
 import com.google.chat.v1.ChatServiceSettings;
+import com.google.chat.v1.ActionResponse;
 import com.google.chat.v1.CreateMessageRequest;
 import com.google.chat.v1.Message;
 import java.io.IOException;
@@ -193,7 +194,30 @@ public class Controller {
     }
 
     String authUrl = generateAuthUrl(userName, redirectUri);
-    sendMessage(spaceName, "Please authorize access to use this command: " + authUrl);
+    sendAuthMessage(spaceName, authUrl);
+  }
+
+  private void sendAuthMessage(String spaceName, String authUrl) {
+    if (chatServiceClient == null) {
+      logger.error("ChatServiceClient is null. Cannot send message.");
+      return;
+    }
+    try {
+      Message message =
+          Message.newBuilder()
+              .setActionResponse(
+                  ActionResponse.newBuilder()
+                      .setType(ActionResponse.ResponseType.REQUEST_CONFIG)
+                      .setUrl(authUrl)
+                      .build())
+              .build();
+      CreateMessageRequest request =
+          CreateMessageRequest.newBuilder().setParent(spaceName).setMessage(message).build();
+      chatServiceClient.createMessage(request);
+      logger.info("Auth message sent to space: " + spaceName);
+    } catch (Exception e) {
+      logger.error("Failed to send auth message to Chat: " + e.getMessage(), e);
+    }
   }
 
   private void createMessage(JsonNode event) {
