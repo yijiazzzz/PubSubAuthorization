@@ -44,7 +44,8 @@ public class Controller {
           // Add other required scopes here
           );
 
-  private static final String OOB_REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
+  // Using google.com as a dummy redirect URI to satisfy Web Client constraints
+  private static final String MANUAL_REDIRECT_URI = "https://www.google.com";
 
   private final ChatServiceClient chatServiceClient;
 
@@ -160,7 +161,7 @@ public class Controller {
                   clientId,
                   clientSecret,
                   code,
-                  OOB_REDIRECT_URI)
+                  MANUAL_REDIRECT_URI)
               .execute();
 
       String accessToken = tokenResponse.getAccessToken();
@@ -233,10 +234,11 @@ public class Controller {
       return;
     }
 
-    String authUrl = generateAuthUrl(userName, OOB_REDIRECT_URI);
+    String authUrl = generateAuthUrl(userName, MANUAL_REDIRECT_URI);
     sendMessage(
         spaceName,
-        "Please authorize access to use this command (copy the code and paste it here): "
+        "Please authorize access (you will be redirected to google.com; copy the 'code' parameter"
+            + " from the URL bar and paste it here): "
             + authUrl);
   }
 
