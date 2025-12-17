@@ -44,9 +44,6 @@ public class Controller {
           // Add other required scopes here
           );
 
-  // Using google.com as a dummy redirect URI to satisfy Web Client constraints
-  private static final String MANUAL_REDIRECT_URI = "https://www.google.com";
-
   private final ChatServiceClient chatServiceClient;
 
   @Value("${google.client.id:}")
@@ -100,8 +97,6 @@ public class Controller {
       String refreshToken = tokenResponse.getRefreshToken();
 
       logger.info("Access token received: " + accessToken);
-      // 2. Store tokens in DB associated with the user (passed in 'state' or session)
-      // 3. (Optional) Use the token immediately to post a message?
 
       return "Authorization successful! You can now use the slash command.";
     } catch (IOException e) {
@@ -130,49 +125,12 @@ public class Controller {
       if ("SLASH_COMMAND".equals(type)
           || ("MESSAGE".equals(type) && event.path("message").has("slashCommand"))) {
         handleSlashCommand(event);
-      } else if ("MESSAGE".equals(type)) {
-        handleMessage(event);
       } else {
         logger.info("Received event type: " + type);
       }
     } catch (Exception e) {
       logger.error("Error processing message: " + e.getMessage(), e);
       e.printStackTrace();
-    }
-  }
-
-  private void handleMessage(JsonNode event) {
-    String text = event.path("message").path("text").asText();
-    if (text != null && text.trim().startsWith("4/")) {
-      processAuthCode(event, text.trim());
-    } else {
-      logger.info("Ignored message: " + text);
-    }
-  }
-
-  private void processAuthCode(JsonNode event, String code) {
-    String spaceName = event.path("space").path("name").asText();
-    try {
-      GoogleTokenResponse tokenResponse =
-          new GoogleAuthorizationCodeTokenRequest(
-                  httpTransport,
-                  jsonFactory,
-                  tokenUri,
-                  clientId,
-                  clientSecret,
-                  code,
-                  MANUAL_REDIRECT_URI)
-              .execute();
-
-      String accessToken = tokenResponse.getAccessToken();
-      String refreshToken = tokenResponse.getRefreshToken();
-
-      logger.info("Access token received via manual flow: " + accessToken);
-      // Store tokens in DB associated with the user
-      sendMessage(spaceName, "Authorization successful! You can now use the slash command.");
-    } catch (IOException e) {
-      logger.error("Failed to exchange code for token", e);
-      sendMessage(spaceName, "Authorization failed: " + e.getMessage());
     }
   }
 
@@ -234,12 +192,8 @@ public class Controller {
       return;
     }
 
-    String authUrl = generateAuthUrl(userName, MANUAL_REDIRECT_URI);
-    sendMessage(
-        spaceName,
-        "Please authorize access (you will be redirected to google.com; copy the 'code' parameter"
-            + " from the URL bar and paste it here): "
-            + authUrl);
+    String authUrl = generateAuthUrl(userName, redirectUri);
+    sendMessage(spaceName, "Please authorize access to use this command: " + authUrl);
   }
 
   private void createMessage(JsonNode event) {
